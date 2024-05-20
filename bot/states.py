@@ -7,6 +7,8 @@ class AuthStates(StatesGroup):
     waiting_for_password = State()
 
 
+
+
 class MenuStates(StatesGroup):
     main_menu = State()  # Новое состояние для главного меню
     waiting_for_student_name = State()
