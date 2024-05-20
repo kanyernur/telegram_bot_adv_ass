@@ -1,0 +1,2 @@
+python -m server.server
+python main.py

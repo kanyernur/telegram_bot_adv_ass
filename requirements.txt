@@ -1,0 +1,6 @@
+aiogram
+psycopg2-binary
+openpyxl
+fastapi
+uvicorn
+requests
