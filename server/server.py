@@ -1,4 +1,4 @@
-#SERVAK
+#server.py
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from database.database import fetch_user, check_email, fetch_students, generate_excel_report, generate_pdf_isp

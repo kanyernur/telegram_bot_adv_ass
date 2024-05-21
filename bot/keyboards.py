@@ -1,3 +1,4 @@
+#keyboards.py
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from translations.translations import translations
 

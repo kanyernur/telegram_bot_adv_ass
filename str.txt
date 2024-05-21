@@ -1,2 +1,4 @@
 python -m server.server
 python main.py
+import matplotlib.pyplot as plt
+import numpy as np

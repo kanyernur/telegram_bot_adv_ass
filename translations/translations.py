@@ -1,3 +1,4 @@
+#translations.py
 translations = {
     'en': {
         'start': "Press the button to start.",
@@ -22,7 +23,8 @@ translations = {
         'back': 'Back',
         'enter_student_name': "Please enter the student's first and last name:",
         'choose_report_type': "Choose the type of report:",
-        'invalid_name': "Invalid name. Please enter a valid name:"
+        'invalid_name': "Invalid name. Please enter a valid name:",
+        'semester_not_finished': 'The semester is not yet finished, and the record book is not closed.'
     },
     'kk': {
         'start': "Бастау үшін түймені басыңыз.",
@@ -47,7 +49,8 @@ translations = {
         'back': 'Артқа',
         'enter_student_name': "Студенттің аты-жөнін енгізіңіз:",
         'choose_report_type': "Есептің түрін таңдаңыз:",
-        'invalid_name': "Аты-жөні қате. Дұрыс аты-жөнін енгізіңіз:"
+        'invalid_name': "Аты-жөні қате. Дұрыс аты-жөнін енгізіңіз:",
+        'semester_not_finished': 'Семестр әлі аяқталған жоқ, ведомость жабылмаған.'
     },
     'ru': {
         'start': "Нажмите кнопку, чтобы начать.",
@@ -72,6 +75,7 @@ translations = {
         'back': 'Назад',
         'enter_student_name': "Пожалуйста, введите имя и фамилию студента:",
         'choose_report_type': "Выберите тип отчета:",
-        'invalid_name': "Неверное имя. Пожалуйста, введите корректное имя:"
+        'invalid_name': "Неверное имя. Пожалуйста, введите корректное имя:",
+        'semester_not_finished': 'Семестр еще не окончен, ведомость не закрыта.'
     }
 }
