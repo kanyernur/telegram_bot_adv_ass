@@ -1,4 +1,3 @@
-#translations.py
 translations = {
     'en': {
         'start': "Press the button to start.",
@@ -24,7 +23,12 @@ translations = {
         'enter_student_name': "Please enter the student's first and last name:",
         'choose_report_type': "Choose the type of report:",
         'invalid_name': "Invalid name. Please enter a valid name:",
-        'semester_not_finished': 'The semester is not yet finished, and the record book is not closed.'
+        'semester_not_finished': 'The semester is not yet finished, and the record book is not closed.',
+        'assessment_problem': 'received {score} points in {course_name} on {assessment_number}-assessment.\n',
+        'attendance_problem': 'missed {percentage}% of classes in {course_name}.\n',
+        'no_problem_students': 'There are no problem students.',
+        'problem_students_header': 'Problem Students:',
+        'elective_problem': 'selected more than one course from the same elective block'
     },
     'kk': {
         'start': "Бастау үшін түймені басыңыз.",
@@ -50,7 +54,12 @@ translations = {
         'enter_student_name': "Студенттің аты-жөнін енгізіңіз:",
         'choose_report_type': "Есептің түрін таңдаңыз:",
         'invalid_name': "Аты-жөні қате. Дұрыс аты-жөнін енгізіңіз:",
-        'semester_not_finished': 'Семестр әлі аяқталған жоқ, ведомость жабылмаған.'
+        'semester_not_finished': 'Семестр әлі аяқталған жоқ, ведомость жабылмаған.',
+        'assessment_problem': '{assessment_number}-аттестациядан {course_name} пәнінен {score} балл алды.\n',
+        'attendance_problem': '{course_name} пәнінен {percentage}% сабаққа қатыспады.\n',
+        'no_problem_students': 'Мәселелі студенттер жоқ.',
+        'problem_students_header': 'Мәселелі студенттер:',
+        'elective_problem': 'бір элективті блоктан екі немесе одан көп пән таңдаған'
     },
     'ru': {
         'start': "Нажмите кнопку, чтобы начать.",
@@ -76,6 +85,11 @@ translations = {
         'enter_student_name': "Пожалуйста, введите имя и фамилию студента:",
         'choose_report_type': "Выберите тип отчета:",
         'invalid_name': "Неверное имя. Пожалуйста, введите корректное имя:",
-        'semester_not_finished': 'Семестр еще не окончен, ведомость не закрыта.'
+        'semester_not_finished': 'Семестр еще не окончен, ведомость не закрыта.',
+        'assessment_problem': 'по дисциплине {course_name} на {assessment_number}-аттестации получил {score} баллов.\n',
+        'attendance_problem': 'по дисциплине {course_name} пропустил {percentage}% уроков.\n',
+        'no_problem_students': 'Проблемных студентов нет.',
+        'problem_students_header': 'Проблемные студенты:',
+        'elective_problem': 'выбрал более одного курса из одного элективного блока'
     }
 }

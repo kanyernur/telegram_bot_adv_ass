@@ -4,3 +4,6 @@ openpyxl
 fastapi
 uvicorn
 requests
+httpx
+unittest
+unittest.mock
