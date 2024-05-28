@@ -34,36 +34,34 @@ def is_semester_closed():
     return result['semester_closed'] if result else False   # Возврат статуса семестра или False
 
 
-# Функция для получения оценок студентов
-def fetch_grades(assessment_number):
-    connection = get_db_connection()    # Получение соединения с БД
-    cursor = connection.cursor(cursor_factory=RealDictCursor)   # Создание курсора с фабрикой словарей
+# Функции для получения оценок студентов
+def fetch_grades(advisor_id, assessment_number):
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
     cursor.execute(f"""
         SELECT s.student_id, s.surname, s.name, g.course_id, g.assessment{assessment_number}, c.code, c.name as course_name
         FROM students s
         JOIN grades g ON s.student_id = g.student_id
         JOIN courses c ON g.course_id = c.course_id
-    """)    # Запрос оценок студентов
-    grades = cursor.fetchall()  # Получение всех результатов
-    cursor.close()  # Закрытие курсора
-    connection.close()  # Закрытие соединения
-    return grades   # Возврат списка оценок
+        WHERE s.advisor_id = %s
+    """, (advisor_id,))
+    grades = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return grades
 
 
-# Функция для генерации отчета по аттестации
-def generate_assessment_report(assessment_number):
-    grades = fetch_grades(assessment_number)    # Получение оценок студентов
-    workbook = openpyxl.Workbook()  # Создание нового рабочей книги
-    sheet = workbook.active # Получение активного листа
-    sheet.title = f'Assessment {assessment_number} Report'  # Установка названия листа
+def generate_assessment_report(advisor_id, assessment_number):
+    grades = fetch_grades(advisor_id, assessment_number)
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = f'Assessment {assessment_number} Report'
 
-    # Заголовки
     headers = ['№', 'ФИО', 'Курс']
-    courses = list(set([f"{grade['code']} – {grade['course_name']}" for grade in grades]))  # Получение уникальных курсов
+    courses = list(set([f"{grade['code']} – {grade['course_name']}" for grade in grades]))
     headers.extend(courses)
-    sheet.append(headers)   # Добавление заголовков на лист
+    sheet.append(headers)
 
-    # Стиль заголовков
     header_font = Font(bold=True)
     header_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -76,7 +74,6 @@ def generate_assessment_report(assessment_number):
         cell.alignment = header_alignment
         cell.border = border_style
 
-    # Заполнение данных студентов
     student_data = {}
     for idx, grade in enumerate(grades):
         student_id = grade['student_id']
@@ -95,7 +92,6 @@ def generate_assessment_report(assessment_number):
         row.extend([student['Оценки'][course] for course in courses])
         sheet.append(row)
 
-        # Стиль данных
         for col_num in range(1, len(row) + 1):
             cell = sheet.cell(row=row_num, column=col_num)
             cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -109,7 +105,6 @@ def generate_assessment_report(assessment_number):
                 cell.fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
                 cell.font = Font(color="FFFFFF")
 
-        # Установка цвета фона для строк
         if row_num % 2 == 0:
             fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
         else:
@@ -124,7 +119,6 @@ def generate_assessment_report(assessment_number):
 
         row_num += 1
 
-    # Авторазмер колонок
     for col in sheet.columns:
         max_length = 0
         column = col[0].column_letter
@@ -137,7 +131,6 @@ def generate_assessment_report(assessment_number):
         adjusted_width = (max_length + 2)
         sheet.column_dimensions[column].width = adjusted_width
 
-    # Генерация графиков по каждому курсу
     for idx, course in enumerate(courses):
         chart_data = {
             'ВСЕГО': 0,
@@ -179,22 +172,22 @@ def generate_assessment_report(assessment_number):
 
         sheet.add_chart(bar_chart, f'A{row_num + idx * 15 + 2}')
 
-    report_file = f"assessment_report_{assessment_number}.xlsx"
-    workbook.save(report_file)  # Сохранение отчета в файл
-    return report_file  # Возврат имени файла отчета
+    report_file = f"assessment_report_{advisor_id}_{assessment_number}.xlsx"
+    workbook.save(report_file)
+    return report_file
 
 
 # Функция для получения данных пользователя (адвайзера) по email и паролю
 def fetch_user(email, password):
-    connection = get_db_connection()    # Получение соединения с БД
-    cursor = connection.cursor(cursor_factory=RealDictCursor)   # Создание курсора с фабрикой словарей
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
     cursor.execute(
         "SELECT * FROM advisors WHERE email = %s AND password = %s", (email, password)
     )
-    user = cursor.fetchone()    # Получение результата запроса
-    cursor.close()  # Закрытие курсора
-    connection.close()  # Закрытие соединения
-    return user # Возврат данных пользователя
+    user = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return user
 
 
 # Функция для проверки наличия email в базе данных
@@ -212,15 +205,15 @@ def check_email(email):
 
 # Функция для получения списка студентов для конкретного адвайзера
 def fetch_students(advisor_id):
-    connection = get_db_connection()    # Получение соединения с БД
-    cursor = connection.cursor(cursor_factory=RealDictCursor)   # Создание курсора с фабрикой словарей
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
     cursor.execute(
         "SELECT * FROM students WHERE advisor_id = %s", (advisor_id,)
-    )   # Запрос списка студентов для конкретного адвайзера
-    students = cursor.fetchall()    # Получение всех результатов
-    cursor.close()  # Закрытие курсора
-    connection.close()  # Закрытие соединения
-    return students # Возврат списка студентов
+    )
+    students = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return students
 
 
 # Функция для генерации Excel-отчета для адвайзера
@@ -350,18 +343,18 @@ def generate_pdf_isp(student_name):
 
 # Функция для получения списка студентов с проблемными оценками и пропусками
 def fetch_problem_students(advisor_id):
-    connection = get_db_connection()    # Получение соединения с БД
-    cursor = connection.cursor(cursor_factory=RealDictCursor)   # Создание курсора с фабрикой словарей
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
     cursor.execute("""
         SELECT s.student_id, s.surname, s.name, g.course_id, g.assessment1, g.assessment2, g.attendance, c.name as course_name
         FROM students s
         JOIN grades g ON s.student_id = g.student_id
         JOIN courses c ON g.course_id = c.course_id
         WHERE (g.assessment1 <= 15 OR g.assessment2 <= 15 OR g.attendance >= 15) AND s.advisor_id = %s
-    """, (advisor_id,))     # Запрос студентов с проблемными оценками и пропусками
-    problem_students = cursor.fetchall()    # Получение всех результатов
-    cursor.close()  # Закрытие курсора
-    connection.close()  # Закрытие соединения
+    """, (advisor_id,))
+    problem_students = cursor.fetchall()
+    cursor.close()
+    connection.close()
 
     students = {}
     for entry in problem_students:
@@ -391,15 +384,13 @@ def fetch_problem_students(advisor_id):
                 'percentage': entry['attendance']
             })
 
-    return list(students.values())  # Возврат списка студентов с проблемными оценками и пропусками
+    return list(students.values())
 
 
 # Функция для получения списка студентов с проблемами в выборе элективов
-def fetch_problem_students_based_on_electives():
-    connection = get_db_connection()    # Получение соединения с БД
-    cursor = connection.cursor(cursor_factory=RealDictCursor)   # Создание курсора с фабрикой словарей
-
-
+def fetch_problem_students_based_on_electives(advisor_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=RealDictCursor)
     cursor.execute("""
         SELECT s.student_id, s.surname, s.name, c.code, c.name as course_name, eb.block_number
         FROM students s
@@ -407,13 +398,12 @@ def fetch_problem_students_based_on_electives():
         JOIN courses c ON ssc.course_id = c.course_id
         JOIN elective_courses ec ON c.course_id = ec.course_id
         JOIN elective_blocks eb ON ec.block_id = eb.block_id
-    """)    # Запрос студентов с проблемами в выборе элективов
+        WHERE s.advisor_id = %s
+    """, (advisor_id,))
+    student_courses = cursor.fetchall()
+    cursor.close()
+    connection.close()
 
-    student_courses = cursor.fetchall()     # Получение всех результатов
-    cursor.close()  # Закрытие курсора
-    connection.close()  # Закрытие соединения
-
-    # Идентифицируем студентов, которые выбрали более одного курса из одного и того же элективного блока
     student_electives = {}
     for entry in student_courses:
         student_id = entry['student_id']
@@ -442,6 +432,4 @@ def fetch_problem_students_based_on_electives():
                     'block_number': block_number
                 })
 
-    return problem_students     # Возврат списка студентов с проблемами в выборе элективов
-
-
+    return problem_students

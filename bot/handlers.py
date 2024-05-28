@@ -12,7 +12,7 @@ from config.config import config
 from translations.translations import translations
 import requests
 from database.database import generate_assessment_report, is_semester_closed, fetch_problem_students, \
-    fetch_problem_students_based_on_electives
+    fetch_problem_students_based_on_electives, fetch_students, generate_excel_report
 
 # Инициализация токена и URL сервера из конфигурационного файла
 API_TOKEN = config.API_TOKEN
@@ -104,14 +104,14 @@ async def show_main_menu(message: types.Message, language: str):
 # Обработчик кнопки "Мои студенты"
 @dp.message_handler(lambda message: message.text in [translations[lang]['my_students'] for lang in translations.keys()], state='*')
 async def my_students(message: types.Message):
-    language = user_sessions[message.from_user.id]['language']  # Получение выбранного языка пользователя
-    advisor_id = user_sessions[message.from_user.id]['advisor_id']  # Получение ID консультанта из сессии пользователя
-    response = requests.get(f"{SERVER_URL}/students/{advisor_id}")  # Отправка запроса на получение данных студентов
-    if response.status_code == 200: # Если запрос успешен
-        with open(response.json()["report_file"], 'rb') as file:
-            await message.reply_document(file)  # Отправка документа с данными студентов
+    language = user_sessions[message.from_user.id]['language']
+    advisor_id = user_sessions[message.from_user.id]['advisor_id']
+    students = fetch_students(advisor_id)
+    if students:
+        report_file = generate_excel_report(advisor_id)
+        await message.reply_document(InputFile(report_file))
     else:
-        await message.reply(translations[language]['authorization_failed']) # Сообщение о неудачной авторизации
+        await message.reply(translations[language]['no_students'])
 
 
 # Обработчик кнопки "Посмотреть ИУП студента"
@@ -140,9 +140,10 @@ async def process_student_name(message: types.Message, state: FSMContext):
 # Обработчик кнопки "Отчет об оценках"
 @dp.message_handler(lambda message: message.text in [translations[lang]['report_of_grades'] for lang in translations.keys()], state='*')
 async def report_of_grades(message: types.Message):
-    language = user_sessions[message.from_user.id]['language']  # Получение выбранного языка пользователя
-    await bot.send_message(message.from_user.id, translations[language]['choose_option'], reply_markup=report_types_markup(language))   # Запрос выбора типа отчета и отправка соответствующей клавиатуры
-    await MenuStates.waiting_for_report_type.set()  # Установка состояния ожидания выбора типа отчета
+    language = user_sessions[message.from_user.id]['language']
+    advisor_id = user_sessions[message.from_user.id]['advisor_id']
+    await bot.send_message(message.from_user.id, translations[language]['choose_option'], reply_markup=report_types_markup(language))
+    await MenuStates.waiting_for_report_type.set()
 
 
 # Обработчик кнопки "Назад" в меню отчетов
@@ -156,47 +157,42 @@ async def back_to_main_menu(message: types.Message, state: FSMContext):
 # Обработчик выбора типа отчета
 @dp.message_handler(state=MenuStates.waiting_for_report_type)
 async def grades_menu_handler(message: types.Message, state: FSMContext):
-    language = user_sessions[message.from_user.id]['language']  # Получение выбранного языка пользователя
+    language = user_sessions[message.from_user.id]['language']
+    advisor_id = user_sessions[message.from_user.id]['advisor_id']
     if message.text == translations[language]['first_assessment']:
-        report_file = generate_assessment_report(1)  # Генерация отчета для 1 аттестации
+        report_file = generate_assessment_report(advisor_id, 1)
         await bot.send_document(message.chat.id, InputFile(report_file))
     elif message.text == translations[language]['second_assessment']:
-        report_file = generate_assessment_report(2)  # Генерация отчета для 2 аттестации
+        report_file = generate_assessment_report(advisor_id, 2)
         await bot.send_document(message.chat.id, InputFile(report_file))
     elif message.text == translations[language]['semester']:
         if is_semester_closed():
-            report_file = generate_assessment_report(3)  # Генерация отчета для семестрового отчета, если семестр закрыт
+            report_file = generate_assessment_report(advisor_id, 3)
             await bot.send_document(message.chat.id, InputFile(report_file))
         else:
-            # Ответ о том, что семестр еще не окончен
             await bot.send_message(message.from_user.id, translations[language]['semester_not_finished'])
 
 
 # Обработчик кнопки "Проблемные студенты"
-@dp.message_handler(
-    lambda message: message.text in [translations[lang]['problem_students'] for lang in translations.keys()], state='*')
+@dp.message_handler(lambda message: message.text in [translations[lang]['problem_students'] for lang in translations.keys()], state='*')
 async def problem_students(message: types.Message):
-    language = user_sessions[message.from_user.id]['language']  # Получение выбранного языка пользователя
-    advisor_id = user_sessions[message.from_user.id]['advisor_id']  # Получение ID консультанта из сессии пользователя
+    language = user_sessions[message.from_user.id]['language']
+    advisor_id = user_sessions[message.from_user.id]['advisor_id']
+    problem_students = fetch_problem_students(advisor_id)
+    elective_problem_students = fetch_problem_students_based_on_electives(advisor_id)
 
-    problem_students = fetch_problem_students(advisor_id)   # Получение списка студентов с проблемными оценками
-    elective_problem_students = fetch_problem_students_based_on_electives() # Получение списка студентов с проблемами в выборе элективов
-
-    # Сообщение для студентов с проблемными оценками
     response_message_assessment = translations[language]['problem_students_header'] + "\n"
     for student in problem_students:
         full_name = f"{student['surname']} {student['name']}"
         for assessment in student['assessments']:
             response_message_assessment += f"{full_name} {translations[language]['assessment_problem'].format(score=assessment['score'], course_name=assessment['course_name'], assessment_number=assessment['assessment_number'])}"
 
-    # Формирование сообщения для студентов с проблемными пропусками
     response_message_attendance = translations[language]['problem_students_header'] + "\n"
     for student in problem_students:
         full_name = f"{student['surname']} {student['name']}"
         for attendance in student['attendances']:
             response_message_attendance += f"{full_name} {translations[language]['attendance_problem'].format(course_name=attendance['course_name'], percentage=attendance['percentage'])}"
 
-    # Формирование сообщения для студентов, выбравших более одного курса из одного блока
     response_message_elective = translations[language]['problem_students_header'] + "\n"
     for student in elective_problem_students:
         full_name = f"{student['surname']} {student['name']}"
@@ -204,7 +200,6 @@ async def problem_students(message: types.Message):
         block_number = student['block_number']
         response_message_elective += f"{full_name} {translations[language]['elective_problem']}: {block_number}: {course_list}.\n"
 
-    # Отправка сообщений пользователю
     if response_message_assessment.strip() != translations[language]['problem_students_header']:
         await message.reply(response_message_assessment)
 
